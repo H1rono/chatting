@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package chatting.id;
+
+message UserId {
+    // Must be a UUID
+    string id = 1;
+}

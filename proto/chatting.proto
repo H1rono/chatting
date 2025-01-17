@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package chatting;
+
+import public "id.proto";
+import public "user.proto";
