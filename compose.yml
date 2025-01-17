@@ -1,0 +1,39 @@
+name: chatting
+
+services:
+  db:
+    image: mariadb:11.4.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chatting
+      MYSQL_USER: chatting
+      MYSQL_PASSWORD: chatting
+    expose:
+      - 3306
+    ports:
+      - '3306:3306'
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  dbgate:
+    # https://hub.docker.com/r/dbgate/dbgate
+    image: dbgate/dbgate:6.1.2
+    restart: always
+    environment:
+      # https://dbgate.org/docs/env-variables.html
+      - CONNECTIONS=db
+      - LABEL_db=MariaDB
+      - SERVER_db=db
+      - USER_db=root
+      - PASSWORD_db=root
+      - PORT_db=mysql
+      - DATABASE_db=chatting
+      - ENGINE_db=mysql@dbgate-plugin-mysql
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+  # TODO: add backend service
