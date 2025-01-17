@@ -1,6 +1,16 @@
+[workspace]
+resolver = "2"
+members = ["./."]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+publish = false
+
 [package]
 name = "chatting"
-version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
 
 [dependencies]
