@@ -44,7 +44,7 @@ pub struct DeleteUser {
     pub id: UserId,
 }
 
-pub trait UserService<Context>: Send + Sync + 'static {
+pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
     type Error: std::error::Error + Send + Sync + 'static;
 
     fn get_user<'a>(
@@ -67,4 +67,10 @@ pub trait UserService<Context>: Send + Sync + 'static {
         ctx: &'a Context,
         request: DeleteUser,
     ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
+}
+
+pub trait ProvideUserService<Context: ?Sized>: Send + Sync + 'static {
+    type UserService: UserService<Context>;
+
+    fn user_service(&self) -> &Self::UserService;
 }
