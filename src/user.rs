@@ -69,6 +69,7 @@ pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
     ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
 }
 
+#[expect(clippy::type_complexity)]
 pub trait ProvideUserService: Send + Sync + 'static {
     type Context: ?Sized;
     type UserService: UserService<Self::Context>;
