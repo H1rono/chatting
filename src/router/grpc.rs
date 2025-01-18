@@ -145,29 +145,79 @@ where
         request: tonic::Request<user::GetUserRequest>,
     ) -> tonic::Result<tonic::Response<user::GetUserResponse>> {
         let (_, _, request) = request.into_parts();
-        // self.state.user_service().get_user(self.state, request)
-        todo!()
+        let request = request.try_into()?;
+        let user = self
+            .state
+            .get_user(request)
+            .await
+            .map_err(error_into_status)?;
+        let Some(user) = user else {
+            tracing::info!("No user found");
+            return Err(Status::not_found(""));
+        };
+        let res = user::GetUserResponse {
+            user: Some(user.try_into()?),
+        };
+        Ok(tonic::Response::new(res))
     }
 
     async fn create_user(
         &self,
         request: tonic::Request<user::CreateUserRequest>,
     ) -> tonic::Result<tonic::Response<user::CreateUserResponse>> {
-        todo!()
+        let (_, _, request) = request.into_parts();
+        let request = request.try_into()?;
+        let user = self
+            .state
+            .create_user(request)
+            .await
+            .map_err(error_into_status)?;
+        let res = user::CreateUserResponse {
+            user: Some(user.try_into()?),
+        };
+        Ok(tonic::Response::new(res))
     }
 
     async fn update_user(
         &self,
         request: tonic::Request<user::UpdateUserRequest>,
     ) -> tonic::Result<tonic::Response<user::UpdateUserResponse>> {
-        todo!()
+        let (_, _, request) = request.into_parts();
+        let request = request.try_into()?;
+        let user = self
+            .state
+            .update_user(request)
+            .await
+            .map_err(error_into_status)?;
+        let Some(user) = user else {
+            tracing::info!("No user found");
+            return Err(Status::not_found(""));
+        };
+        let res = user::UpdateUserResponse {
+            user: Some(user.try_into()?),
+        };
+        Ok(tonic::Response::new(res))
     }
 
     async fn delete_user(
         &self,
         request: tonic::Request<user::DeleteUserRequest>,
     ) -> tonic::Result<tonic::Response<user::DeleteUserResponse>> {
-        todo!()
+        let (_, _, request) = request.into_parts();
+        let request = request.try_into()?;
+        let user = self
+            .state
+            .delete_user(request)
+            .await
+            .map_err(error_into_status)?;
+        let Some(user) = user else {
+            tracing::info!("No user found");
+            return Err(Status::not_found(""));
+        };
+        let res = user::DeleteUserResponse {
+            user: Some(user.try_into()?),
+        };
+        Ok(tonic::Response::new(res))
     }
 }
 
