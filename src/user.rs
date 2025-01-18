@@ -2,9 +2,10 @@ use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 
 pub mod error;
-pub mod svc;
+mod svc;
 
 pub use error::{Error, Result};
+pub use svc::Impl as UserServiceImpl;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
