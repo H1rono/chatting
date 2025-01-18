@@ -27,12 +27,14 @@ impl<State> Clone for UserService<State> {
 #[async_trait::async_trait]
 impl<State> user_service_server::UserService for UserService<State>
 where
-    State: ProvideUserService<State>,
+    State: ProvideUserService<Context = State>,
 {
     async fn get_user(
         &self,
         request: tonic::Request<GetUserRequest>,
     ) -> tonic::Result<tonic::Response<GetUserResponse>> {
+        let (_, _, request) = request.into_parts();
+        // self.state.user_service().get_user(self.state, request)
         todo!()
     }
 
@@ -58,7 +60,7 @@ where
     }
 }
 
-pub fn user_service<State: ProvideUserService<State>>(
+pub fn user_service<State: ProvideUserService<Context = State>>(
     state: Arc<State>,
 ) -> impl Service<
     http::Request<AxumBody>,

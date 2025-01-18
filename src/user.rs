@@ -69,37 +69,46 @@ pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
     ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
 }
 
-pub trait ProvideUserService<Context: ?Sized>: Send + Sync + 'static {
-    type UserService: UserService<Context>;
+pub trait ProvideUserService: Send + Sync + 'static {
+    type Context: ?Sized;
+    type UserService: UserService<Self::Context>;
 
     fn user_service(&self) -> &Self::UserService;
-}
 
-pub trait ProvideUserServiceExt: ProvideUserService<Self> {
     fn get_user(
         &self,
         request: GetUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>> {
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
+    where
+        Self: ProvideUserService<Context = Self>,
+    {
         self.user_service().get_user(self, request)
     }
     fn create_user(
         &self,
         request: CreateUser,
-    ) -> BoxFuture<'_, Result<User, <Self::UserService as UserService<Self>>::Error>> {
+    ) -> BoxFuture<'_, Result<User, <Self::UserService as UserService<Self>>::Error>>
+    where
+        Self: ProvideUserService<Context = Self>,
+    {
         self.user_service().create_user(self, request)
     }
     fn update_user(
         &self,
         request: UpdateUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>> {
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
+    where
+        Self: ProvideUserService<Context = Self>,
+    {
         self.user_service().update_user(self, request)
     }
     fn delete_user(
         &self,
         request: DeleteUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>> {
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
+    where
+        Self: ProvideUserService<Context = Self>,
+    {
         self.user_service().delete_user(self, request)
     }
 }
-
-impl<T> ProvideUserServiceExt for T where T: ProvideUserService<T> {}

@@ -13,7 +13,7 @@ pub fn make_router<State>(
     Error = std::convert::Infallible,
 >
 where
-    State: crate::user::ProvideUserService<State>,
+    State: crate::user::ProvideUserService<Context = State>,
 {
     grpc::user_service(state)
 }
