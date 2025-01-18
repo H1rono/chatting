@@ -6,8 +6,15 @@ use tower::Service;
 
 use crate::user::ProvideUserService;
 
-tonic::include_proto!("chatting.id");
-tonic::include_proto!("chatting.user");
+mod id {
+    tonic::include_proto!("chatting.id");
+}
+
+mod user {
+    tonic::include_proto!("chatting.user");
+
+    pub use user_service_server::{UserService, UserServiceServer, SERVICE_NAME};
+}
 
 // MARK: user service
 
@@ -25,14 +32,14 @@ impl<State> Clone for UserService<State> {
 }
 
 #[async_trait::async_trait]
-impl<State> user_service_server::UserService for UserService<State>
+impl<State> user::UserService for UserService<State>
 where
     State: ProvideUserService<Context = State>,
 {
     async fn get_user(
         &self,
-        request: tonic::Request<GetUserRequest>,
-    ) -> tonic::Result<tonic::Response<GetUserResponse>> {
+        request: tonic::Request<user::GetUserRequest>,
+    ) -> tonic::Result<tonic::Response<user::GetUserResponse>> {
         let (_, _, request) = request.into_parts();
         // self.state.user_service().get_user(self.state, request)
         todo!()
@@ -40,22 +47,22 @@ where
 
     async fn create_user(
         &self,
-        request: tonic::Request<CreateUserRequest>,
-    ) -> tonic::Result<tonic::Response<CreateUserResponse>> {
+        request: tonic::Request<user::CreateUserRequest>,
+    ) -> tonic::Result<tonic::Response<user::CreateUserResponse>> {
         todo!()
     }
 
     async fn update_user(
         &self,
-        request: tonic::Request<UpdateUserRequest>,
-    ) -> tonic::Result<tonic::Response<UpdateUserResponse>> {
+        request: tonic::Request<user::UpdateUserRequest>,
+    ) -> tonic::Result<tonic::Response<user::UpdateUserResponse>> {
         todo!()
     }
 
     async fn delete_user(
         &self,
-        request: tonic::Request<DeleteUserRequest>,
-    ) -> tonic::Result<tonic::Response<DeleteUserResponse>> {
+        request: tonic::Request<user::DeleteUserRequest>,
+    ) -> tonic::Result<tonic::Response<user::DeleteUserResponse>> {
         todo!()
     }
 }
@@ -90,13 +97,13 @@ pub fn user_service<State: ProvideUserService<Context = State>>(
         }
     }
     impl<S> NamedService for NamedUserService<S> {
-        const NAME: &'static str = user_service_server::SERVICE_NAME;
+        const NAME: &'static str = user::SERVICE_NAME;
     }
 
     let service = UserService { state };
     let service = tower::ServiceBuilder::new()
         .layer(tower_http::trace::TraceLayer::new_for_grpc())
-        .service(user_service_server::UserServiceServer::new(service))
+        .service(user::UserServiceServer::new(service))
         .map_request(|r| r) // workaround to pass `map_response`
         .map_response(|r| r.map(AxumBody::new));
     NamedUserService(service)
