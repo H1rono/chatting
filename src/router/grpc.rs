@@ -227,6 +227,7 @@ pub fn user_service<State: ProvideUserService<Context = State>>(
     http::Request<AxumBody>,
     Response = http::Response<AxumBody>,
     Error = std::convert::Infallible,
+    Future: Send,
 > + NamedService
        + Clone
        + Send
