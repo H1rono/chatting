@@ -2,6 +2,7 @@ use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 
 pub mod error;
+pub mod svc;
 
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
 
