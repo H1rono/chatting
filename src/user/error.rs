@@ -1,13 +1,7 @@
-use std::fmt;
-
-// TODO
-#[derive(Debug, Clone, Copy)]
-pub struct Error;
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "user service error")
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Database error")]
+    Sqlx(#[from] sqlx::Error),
 }
 
-impl std::error::Error for Error {}
+pub type Result<T, E = Error> = std::result::Result<T, E>;

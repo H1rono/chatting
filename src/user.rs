@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub mod error;
 pub mod svc;
 
+pub use error::{Error, Result};
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
