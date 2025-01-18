@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::body::Body as AxumBody;
-use tonic::server::NamedService;
+use tonic::{server::NamedService, Status};
 use tower::Service;
 
 use crate::user::ProvideUserService;
@@ -14,6 +14,110 @@ mod user {
     tonic::include_proto!("chatting.user");
 
     pub use user_service_server::{UserService, UserServiceServer, SERVICE_NAME};
+}
+
+// MARK: type conversions
+
+fn error_into_status<E: std::error::Error + 'static>(e: E) -> Status {
+    tracing::error!(error = &e as &dyn std::error::Error);
+    Status::internal(e.to_string())
+}
+
+fn convert_timestamp(t: crate::user::Timestamp) -> Result<prost_types::Timestamp, tonic::Status> {
+    let seconds = t.timestamp();
+    let nanos = t.timestamp_subsec_nanos() as i32;
+    let t = prost_types::Timestamp { seconds, nanos };
+    Ok(t)
+}
+
+impl TryFrom<crate::user::User> for user::User {
+    type Error = Status;
+    fn try_from(value: crate::user::User) -> Result<Self, Self::Error> {
+        let crate::user::User {
+            id: crate::user::UserId(id),
+            name: crate::user::UserName(name),
+            created_at,
+            updated_at,
+        } = value;
+        let id = id::UserId { id: id.to_string() };
+        let res = user::User {
+            id: Some(id),
+            name,
+            created_at: Some(convert_timestamp(created_at)?),
+            updated_at: Some(convert_timestamp(updated_at)?),
+        };
+        Ok(res)
+    }
+}
+
+impl TryFrom<user::GetUserRequest> for crate::user::GetUser {
+    type Error = Status;
+
+    fn try_from(value: user::GetUserRequest) -> Result<Self, Self::Error> {
+        let user::GetUserRequest { id } = value;
+        let Some(id) = id else {
+            let status = Status::invalid_argument("unspecified user id");
+            return Err(status);
+        };
+        let id = id
+            .id
+            .parse::<uuid::Uuid>()
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let slf = crate::user::GetUser {
+            id: crate::user::UserId(id),
+        };
+        Ok(slf)
+    }
+}
+
+impl TryFrom<user::CreateUserRequest> for crate::user::CreateUser {
+    type Error = Status;
+
+    fn try_from(value: user::CreateUserRequest) -> Result<Self, Self::Error> {
+        let name = crate::user::UserName(value.name);
+        let slf = crate::user::CreateUser { name };
+        Ok(slf)
+    }
+}
+
+impl TryFrom<user::UpdateUserRequest> for crate::user::UpdateUser {
+    type Error = Status;
+
+    fn try_from(value: user::UpdateUserRequest) -> Result<Self, Self::Error> {
+        let user::UpdateUserRequest { id, name } = value;
+        let Some(id) = id else {
+            let status = Status::invalid_argument("unspecified user id");
+            return Err(status);
+        };
+        let id = id
+            .id
+            .parse::<uuid::Uuid>()
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let slf = crate::user::UpdateUser {
+            id: crate::user::UserId(id),
+            name: crate::user::UserName(name),
+        };
+        Ok(slf)
+    }
+}
+
+impl TryFrom<user::DeleteUserRequest> for crate::user::DeleteUser {
+    type Error = Status;
+
+    fn try_from(value: user::DeleteUserRequest) -> Result<Self, Self::Error> {
+        let Some(id) = value.id else {
+            let status = Status::invalid_argument("unspecified user id");
+            return Err(status);
+        };
+        let id = id
+            .id
+            .parse::<uuid::Uuid>()
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let slf = crate::user::DeleteUser {
+            id: crate::user::UserId(id),
+        };
+        Ok(slf)
+    }
 }
 
 // MARK: user service
