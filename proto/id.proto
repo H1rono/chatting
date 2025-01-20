@@ -6,3 +6,8 @@ message UserId {
     // Must be a UUID
     string id = 1;
 }
+
+message MessageId {
+    // Must be a UUID
+    string id = 1;
+}

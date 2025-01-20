@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package chatting.message;
+
+import "google/protobuf/timestamp.proto";
+import public "id.proto";
+
+message Message {
+    chatting.id.MessageId id = 1;
+    string text = 2;
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp updated_at = 4;
+    chatting.id.UserId created_by = 5;
+}
+
+message GetMessageRequest {
+    chatting.id.MessageId id = 1;
+}
+
+message GetMessageResponse {
+    Message message = 1;
+}
+
+message CreateMessageRequest {
+    string text = 1;
+}
+
+message CreateMessageResponse {
+    Message message = 1;
+}
+
+message UpdateMessageRequest {
+    chatting.id.MessageId id = 1;
+    string text = 2;
+}
+
+message UpdateMessageResponse {
+    Message message = 1;
+}
+
+message DeleteMessageRequest {
+    chatting.id.MessageId id = 1;
+}
+
+message DeleteMessageResponse {
+    Message message = 1;
+}
+
+message StreamMessageRequest {
+}
+
+service MessageService {
+    rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
+    rpc CreateMessage(CreateMessageRequest) returns (CreateMessageResponse);
+    rpc UpdateMessage(UpdateMessageRequest) returns (UpdateMessageResponse);
+    rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+    rpc StreamMessages(StreamMessageRequest) returns (stream GetMessageResponse);
+}
