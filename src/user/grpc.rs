@@ -1,19 +1,13 @@
 use std::sync::Arc;
 
-use axum::body::Body as AxumBody;
-use tonic::{server::NamedService, Status};
-use tower::Service;
+use tonic::Status;
 
 use crate::grpc::user as generated;
+use crate::prelude::Error;
 
 pub use generated::user_service_server::SERVICE_NAME;
 
 // MARK: type conversions
-
-fn error_into_status<E: std::error::Error + 'static>(e: E) -> Status {
-    tracing::error!(error = &e as &dyn std::error::Error);
-    Status::internal(e.to_string())
-}
 
 fn convert_timestamp(t: super::Timestamp) -> Result<prost_types::Timestamp, tonic::Status> {
     let seconds = t.timestamp();
@@ -131,6 +125,7 @@ impl<State> Clone for ServiceImpl<State> {
 impl<State> generated::user_service_server::UserService for ServiceImpl<State>
 where
     State: super::ProvideUserService<Context = State>,
+    <State::UserService as super::UserService<State>>::Error: crate::prelude::Error,
 {
     async fn get_user(
         &self,
@@ -142,7 +137,7 @@ where
             .state
             .get_user(request)
             .await
-            .map_err(error_into_status)?;
+            .map_err(|e| e.to_status())?;
         let Some(user) = user else {
             tracing::info!("No user found");
             return Err(Status::not_found(""));
@@ -163,7 +158,7 @@ where
             .state
             .create_user(request)
             .await
-            .map_err(error_into_status)?;
+            .map_err(|e| e.to_status())?;
         let res = generated::CreateUserResponse {
             user: Some(user.try_into()?),
         };
@@ -180,7 +175,7 @@ where
             .state
             .update_user(request)
             .await
-            .map_err(error_into_status)?;
+            .map_err(|e| e.to_status())?;
         let Some(user) = user else {
             tracing::info!("No user found");
             return Err(Status::not_found(""));
@@ -201,7 +196,7 @@ where
             .state
             .delete_user(request)
             .await
-            .map_err(error_into_status)?;
+            .map_err(|e| e.to_status())?;
         let Some(user) = user else {
             tracing::info!("No user found");
             return Err(Status::not_found(""));
@@ -211,48 +206,4 @@ where
         };
         Ok(tonic::Response::new(res))
     }
-}
-
-pub fn user_service<State: super::ProvideUserService<Context = State>>(
-    state: Arc<State>,
-) -> impl Service<
-    http::Request<AxumBody>,
-    Response = http::Response<AxumBody>,
-    Error = std::convert::Infallible,
-    Future: Send,
-> + NamedService
-       + Clone
-       + Send
-       + 'static {
-    use generated::user_service_server::{UserServiceServer, SERVICE_NAME};
-    use std::task::{Context, Poll};
-    use tower::ServiceExt;
-
-    #[derive(Clone)]
-    struct NamedUserService<S>(S);
-    impl<S, B> Service<http::Request<B>> for NamedUserService<S>
-    where
-        S: Service<http::Request<B>>,
-    {
-        type Response = S::Response;
-        type Error = S::Error;
-        type Future = S::Future;
-        fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-            self.0.poll_ready(cx)
-        }
-        fn call(&mut self, req: http::Request<B>) -> Self::Future {
-            self.0.call(req)
-        }
-    }
-    impl<S> NamedService for NamedUserService<S> {
-        const NAME: &'static str = SERVICE_NAME;
-    }
-
-    let service = ServiceImpl { state };
-    let service = tower::ServiceBuilder::new()
-        .layer(tower_http::trace::TraceLayer::new_for_grpc())
-        .service(UserServiceServer::new(service))
-        .map_request(|r| r) // workaround to pass `map_response`
-        .map_response(|r| r.map(AxumBody::new));
-    NamedUserService(service)
 }

@@ -121,6 +121,7 @@ pub trait ProvideUserService: Send + Sync + 'static {
     fn build_tower_service(self: Arc<Self>) -> Server<Self>
     where
         Self: ProvideUserService<Context = Self>,
+        <Self::UserService as UserService<Self>>::Error: crate::prelude::Error,
     {
         let service = grpc::ServiceImpl { state: self };
         crate::grpc::user::user_service_server::UserServiceServer::new(service)
