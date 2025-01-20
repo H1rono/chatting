@@ -269,7 +269,6 @@ dependencies = [
  "tokio-stream",
  "tokio-util",
  "tonic",
- "tonic-build",
  "tonic-types",
  "tonic-web",
  "tower 0.5.2",
