@@ -6,16 +6,6 @@ use tower::Service;
 
 use crate::user::ProvideUserService;
 
-mod id {
-    tonic::include_proto!("chatting.id");
-}
-
-mod user {
-    tonic::include_proto!("chatting.user");
-
-    pub use user_service_server::{UserService, UserServiceServer, SERVICE_NAME};
-}
-
 // MARK: type conversions
 
 fn error_into_status<E: std::error::Error + 'static>(e: E) -> Status {
@@ -30,7 +20,7 @@ fn convert_timestamp(t: crate::user::Timestamp) -> Result<prost_types::Timestamp
     Ok(t)
 }
 
-impl TryFrom<crate::user::User> for user::User {
+impl TryFrom<crate::user::User> for crate::grpc::user::User {
     type Error = Status;
     fn try_from(value: crate::user::User) -> Result<Self, Self::Error> {
         let crate::user::User {
@@ -39,8 +29,8 @@ impl TryFrom<crate::user::User> for user::User {
             created_at,
             updated_at,
         } = value;
-        let id = id::UserId { id: id.to_string() };
-        let res = user::User {
+        let id = crate::grpc::id::UserId { id: id.to_string() };
+        let res = crate::grpc::user::User {
             id: Some(id),
             name,
             created_at: Some(convert_timestamp(created_at)?),
@@ -50,11 +40,11 @@ impl TryFrom<crate::user::User> for user::User {
     }
 }
 
-impl TryFrom<user::GetUserRequest> for crate::user::GetUser {
+impl TryFrom<crate::grpc::user::GetUserRequest> for crate::user::GetUser {
     type Error = Status;
 
-    fn try_from(value: user::GetUserRequest) -> Result<Self, Self::Error> {
-        let user::GetUserRequest { id } = value;
+    fn try_from(value: crate::grpc::user::GetUserRequest) -> Result<Self, Self::Error> {
+        let crate::grpc::user::GetUserRequest { id } = value;
         let Some(id) = id else {
             let status = Status::invalid_argument("unspecified user id");
             return Err(status);
@@ -70,21 +60,21 @@ impl TryFrom<user::GetUserRequest> for crate::user::GetUser {
     }
 }
 
-impl TryFrom<user::CreateUserRequest> for crate::user::CreateUser {
+impl TryFrom<crate::grpc::user::CreateUserRequest> for crate::user::CreateUser {
     type Error = Status;
 
-    fn try_from(value: user::CreateUserRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::grpc::user::CreateUserRequest) -> Result<Self, Self::Error> {
         let name = crate::user::UserName(value.name);
         let slf = crate::user::CreateUser { name };
         Ok(slf)
     }
 }
 
-impl TryFrom<user::UpdateUserRequest> for crate::user::UpdateUser {
+impl TryFrom<crate::grpc::user::UpdateUserRequest> for crate::user::UpdateUser {
     type Error = Status;
 
-    fn try_from(value: user::UpdateUserRequest) -> Result<Self, Self::Error> {
-        let user::UpdateUserRequest { id, name } = value;
+    fn try_from(value: crate::grpc::user::UpdateUserRequest) -> Result<Self, Self::Error> {
+        let crate::grpc::user::UpdateUserRequest { id, name } = value;
         let Some(id) = id else {
             let status = Status::invalid_argument("unspecified user id");
             return Err(status);
@@ -101,10 +91,10 @@ impl TryFrom<user::UpdateUserRequest> for crate::user::UpdateUser {
     }
 }
 
-impl TryFrom<user::DeleteUserRequest> for crate::user::DeleteUser {
+impl TryFrom<crate::grpc::user::DeleteUserRequest> for crate::user::DeleteUser {
     type Error = Status;
 
-    fn try_from(value: user::DeleteUserRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::grpc::user::DeleteUserRequest) -> Result<Self, Self::Error> {
         let Some(id) = value.id else {
             let status = Status::invalid_argument("unspecified user id");
             return Err(status);
@@ -136,14 +126,14 @@ impl<State> Clone for UserService<State> {
 }
 
 #[async_trait::async_trait]
-impl<State> user::UserService for UserService<State>
+impl<State> crate::grpc::user::user_service_server::UserService for UserService<State>
 where
     State: ProvideUserService<Context = State>,
 {
     async fn get_user(
         &self,
-        request: tonic::Request<user::GetUserRequest>,
-    ) -> tonic::Result<tonic::Response<user::GetUserResponse>> {
+        request: tonic::Request<crate::grpc::user::GetUserRequest>,
+    ) -> tonic::Result<tonic::Response<crate::grpc::user::GetUserResponse>> {
         let (_, _, request) = request.into_parts();
         let request = request.try_into()?;
         let user = self
@@ -155,7 +145,7 @@ where
             tracing::info!("No user found");
             return Err(Status::not_found(""));
         };
-        let res = user::GetUserResponse {
+        let res = crate::grpc::user::GetUserResponse {
             user: Some(user.try_into()?),
         };
         Ok(tonic::Response::new(res))
@@ -163,8 +153,8 @@ where
 
     async fn create_user(
         &self,
-        request: tonic::Request<user::CreateUserRequest>,
-    ) -> tonic::Result<tonic::Response<user::CreateUserResponse>> {
+        request: tonic::Request<crate::grpc::user::CreateUserRequest>,
+    ) -> tonic::Result<tonic::Response<crate::grpc::user::CreateUserResponse>> {
         let (_, _, request) = request.into_parts();
         let request = request.try_into()?;
         let user = self
@@ -172,7 +162,7 @@ where
             .create_user(request)
             .await
             .map_err(error_into_status)?;
-        let res = user::CreateUserResponse {
+        let res = crate::grpc::user::CreateUserResponse {
             user: Some(user.try_into()?),
         };
         Ok(tonic::Response::new(res))
@@ -180,8 +170,8 @@ where
 
     async fn update_user(
         &self,
-        request: tonic::Request<user::UpdateUserRequest>,
-    ) -> tonic::Result<tonic::Response<user::UpdateUserResponse>> {
+        request: tonic::Request<crate::grpc::user::UpdateUserRequest>,
+    ) -> tonic::Result<tonic::Response<crate::grpc::user::UpdateUserResponse>> {
         let (_, _, request) = request.into_parts();
         let request = request.try_into()?;
         let user = self
@@ -193,7 +183,7 @@ where
             tracing::info!("No user found");
             return Err(Status::not_found(""));
         };
-        let res = user::UpdateUserResponse {
+        let res = crate::grpc::user::UpdateUserResponse {
             user: Some(user.try_into()?),
         };
         Ok(tonic::Response::new(res))
@@ -201,8 +191,8 @@ where
 
     async fn delete_user(
         &self,
-        request: tonic::Request<user::DeleteUserRequest>,
-    ) -> tonic::Result<tonic::Response<user::DeleteUserResponse>> {
+        request: tonic::Request<crate::grpc::user::DeleteUserRequest>,
+    ) -> tonic::Result<tonic::Response<crate::grpc::user::DeleteUserResponse>> {
         let (_, _, request) = request.into_parts();
         let request = request.try_into()?;
         let user = self
@@ -214,7 +204,7 @@ where
             tracing::info!("No user found");
             return Err(Status::not_found(""));
         };
-        let res = user::DeleteUserResponse {
+        let res = crate::grpc::user::DeleteUserResponse {
             user: Some(user.try_into()?),
         };
         Ok(tonic::Response::new(res))
@@ -232,6 +222,7 @@ pub fn user_service<State: ProvideUserService<Context = State>>(
        + Clone
        + Send
        + 'static {
+    use crate::grpc::user::user_service_server::{UserServiceServer, SERVICE_NAME};
     use std::task::{Context, Poll};
     use tower::ServiceExt;
 
@@ -252,13 +243,13 @@ pub fn user_service<State: ProvideUserService<Context = State>>(
         }
     }
     impl<S> NamedService for NamedUserService<S> {
-        const NAME: &'static str = user::SERVICE_NAME;
+        const NAME: &'static str = SERVICE_NAME;
     }
 
     let service = UserService { state };
     let service = tower::ServiceBuilder::new()
         .layer(tower_http::trace::TraceLayer::new_for_grpc())
-        .service(user::UserServiceServer::new(service))
+        .service(UserServiceServer::new(service))
         .map_request(|r| r) // workaround to pass `map_response`
         .map_response(|r| r.map(AxumBody::new));
     NamedUserService(service)
