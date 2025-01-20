@@ -1,5 +1,7 @@
 pub use tonic::{Code, Status};
 
+pub type Timestamp = chrono::DateTime<chrono::Utc>;
+
 pub trait Error: std::error::Error + Send + Sync + 'static {
     fn code(&self) -> Code;
     fn message(&self) -> String;

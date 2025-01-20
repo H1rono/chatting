@@ -3,13 +3,15 @@ use std::sync::Arc;
 use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::Timestamp;
+
 pub mod error;
 pub mod grpc;
 mod svc;
 
 pub use error::{Error, Result};
 pub use svc::Impl as UserServiceImpl;
-pub type Timestamp = chrono::DateTime<chrono::Utc>;
+
 pub type Server<S> = schema::user::user_service_server::UserServiceServer<grpc::ServiceImpl<S>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
