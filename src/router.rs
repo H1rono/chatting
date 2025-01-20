@@ -13,6 +13,7 @@ pub fn make_router<State>(
 >
 where
     State: crate::user::ProvideUserService<Context = State>,
+    <State::UserService as crate::user::UserService<State>>::Error: crate::prelude::Error,
 {
     use tower::ServiceExt;
 
