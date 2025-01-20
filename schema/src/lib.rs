@@ -5,3 +5,7 @@ pub mod id {
 pub mod user {
     tonic::include_proto!("chatting.user");
 }
+
+pub mod message {
+    tonic::include_proto!("chatting.message");
+}
