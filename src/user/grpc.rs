@@ -104,7 +104,7 @@ impl TryFrom<generated::DeleteUserRequest> for super::DeleteUser {
 // MARK: user service
 
 #[derive(Debug)]
-pub struct ServiceImpl<State: ?Sized> {
+pub struct ServiceImpl<State> {
     pub(super) state: Arc<State>,
 }
 

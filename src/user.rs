@@ -115,8 +115,13 @@ pub trait ProvideUserService: Send + Sync + 'static {
         let ctx = self.context();
         self.user_service().delete_user(ctx, request)
     }
-    fn build_tower_service(self: Arc<Self>) -> Server<Self> {
-        let service = grpc::ServiceImpl { state: self };
+    // `this` to avoid ambiguous calls,
+    // `Self: Sized` to make dyn-compatible
+    fn build_tower_service(this: Arc<Self>) -> Server<Self>
+    where
+        Self: Sized,
+    {
+        let service = grpc::ServiceImpl { state: this };
         schema::user::user_service_server::UserServiceServer::new(service)
     }
 }
