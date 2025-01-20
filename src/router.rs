@@ -15,5 +15,11 @@ where
 {
     use tower::ServiceExt;
 
-    state.build_tower_service().boxed_clone()
+    let user = crate::user::ProvideUserService::build_tower_service(state);
+    let user = tower::ServiceBuilder::new()
+        .layer(tower_http::trace::TraceLayer::new_for_grpc())
+        .service(user)
+        .map_request(|r: http::Request<_>| r)
+        .map_response(|r| r.map(axum::body::Body::new));
+    user.boxed_clone()
 }

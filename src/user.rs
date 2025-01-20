@@ -9,8 +9,9 @@ mod svc;
 
 pub use error::{Error, Result};
 pub use svc::Impl as UserServiceImpl;
-use tower::util::BoxCloneSyncService;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
+pub type Server<S> =
+    crate::grpc::user::user_service_server::UserServiceServer<grpc::ServiceImpl<S>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -117,17 +118,11 @@ pub trait ProvideUserService: Send + Sync + 'static {
     {
         self.user_service().delete_user(self, request)
     }
-    fn build_tower_service(
-        self: Arc<Self>,
-    ) -> BoxCloneSyncService<
-        http::Request<axum::body::Body>,
-        http::Response<axum::body::Body>,
-        std::convert::Infallible,
-    >
+    fn build_tower_service(self: Arc<Self>) -> Server<Self>
     where
-        Self: ProvideUserService<Context = Self> + Sized,
+        Self: ProvideUserService<Context = Self>,
     {
-        let service = grpc::user_service(self);
-        BoxCloneSyncService::new(service)
+        let service = grpc::ServiceImpl { state: self };
+        crate::grpc::user::user_service_server::UserServiceServer::new(service)
     }
 }

@@ -115,8 +115,8 @@ impl TryFrom<generated::DeleteUserRequest> for super::DeleteUser {
 // MARK: user service
 
 #[derive(Debug)]
-struct ServiceImpl<State> {
-    state: Arc<State>,
+pub struct ServiceImpl<State: ?Sized> {
+    pub(super) state: Arc<State>,
 }
 
 impl<State> Clone for ServiceImpl<State> {
