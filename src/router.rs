@@ -10,8 +10,7 @@ pub fn make_router<State>(
     std::convert::Infallible,
 >
 where
-    State: crate::user::ProvideUserService<Context = State>,
-    <State::UserService as crate::user::UserService<State>>::Error: crate::prelude::Error,
+    State: crate::user::ProvideUserService,
 {
     use tower::ServiceExt;
 
