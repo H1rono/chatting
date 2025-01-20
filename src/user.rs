@@ -82,47 +82,42 @@ pub trait ProvideUserService: Send + Sync + 'static {
     type UserService: UserService<Self::Context>;
 
     fn user_service(&self) -> &Self::UserService;
+    fn context(&self) -> &Self::Context;
 
     fn get_user(
         &self,
         request: GetUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
-    where
-        Self: ProvideUserService<Context = Self>,
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
     {
-        self.user_service().get_user(self, request)
+        let ctx = self.context();
+        self.user_service().get_user(ctx, request)
     }
     fn create_user(
         &self,
         request: CreateUser,
-    ) -> BoxFuture<'_, Result<User, <Self::UserService as UserService<Self>>::Error>>
-    where
-        Self: ProvideUserService<Context = Self>,
-    {
-        self.user_service().create_user(self, request)
+    ) -> BoxFuture<'_, Result<User, <Self::UserService as UserService<Self::Context>>::Error>> {
+        let ctx = self.context();
+        self.user_service().create_user(ctx, request)
     }
     fn update_user(
         &self,
         request: UpdateUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
-    where
-        Self: ProvideUserService<Context = Self>,
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
     {
-        self.user_service().update_user(self, request)
+        let ctx = self.context();
+        self.user_service().update_user(ctx, request)
     }
     fn delete_user(
         &self,
         request: DeleteUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self>>::Error>>
-    where
-        Self: ProvideUserService<Context = Self>,
+    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
     {
-        self.user_service().delete_user(self, request)
+        let ctx = self.context();
+        self.user_service().delete_user(ctx, request)
     }
     fn build_tower_service(self: Arc<Self>) -> Server<Self>
     where
-        Self: ProvideUserService<Context = Self>,
-        <Self::UserService as UserService<Self>>::Error: crate::prelude::Error,
+        <Self::UserService as UserService<Self::Context>>::Error: crate::prelude::Error,
     {
         let service = grpc::ServiceImpl { state: self };
         schema::user::user_service_server::UserServiceServer::new(service)

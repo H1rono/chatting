@@ -122,10 +122,10 @@ impl<State> Clone for ServiceImpl<State> {
 }
 
 #[async_trait::async_trait]
-impl<State> generated::user_service_server::UserService for ServiceImpl<State>
+impl<State, Context> generated::user_service_server::UserService for ServiceImpl<State>
 where
-    State: super::ProvideUserService<Context = State>,
-    <State::UserService as super::UserService<State>>::Error: crate::prelude::Error,
+    State: super::ProvideUserService<Context = Context>,
+    <State::UserService as super::UserService<Context>>::Error: crate::prelude::Error,
 {
     async fn get_user(
         &self,

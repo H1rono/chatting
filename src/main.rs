@@ -95,4 +95,7 @@ impl chatting::user::ProvideUserService for State {
     fn user_service(&self) -> &Self::UserService {
         &self.user_service
     }
+    fn context(&self) -> &Self::Context {
+        self
+    }
 }
