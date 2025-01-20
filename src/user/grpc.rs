@@ -9,16 +9,11 @@ pub use generated::user_service_server::SERVICE_NAME;
 
 // MARK: type conversions
 
-fn convert_timestamp(t: super::Timestamp) -> Result<prost_types::Timestamp, tonic::Status> {
-    let seconds = t.timestamp();
-    let nanos = t.timestamp_subsec_nanos() as i32;
-    let t = prost_types::Timestamp { seconds, nanos };
-    Ok(t)
-}
-
 impl TryFrom<super::User> for generated::User {
     type Error = Status;
     fn try_from(value: super::User) -> Result<Self, Self::Error> {
+        use crate::prelude::convert_timestamp;
+
         let super::User {
             id: super::UserId(id),
             name: super::UserName(name),
