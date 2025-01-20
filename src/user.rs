@@ -52,7 +52,7 @@ pub struct DeleteUser {
 }
 
 pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
-    type Error: std::error::Error + Send + Sync + 'static;
+    type Error: crate::prelude::Error;
 
     fn get_user<'a>(
         &'a self,
@@ -115,10 +115,7 @@ pub trait ProvideUserService: Send + Sync + 'static {
         let ctx = self.context();
         self.user_service().delete_user(ctx, request)
     }
-    fn build_tower_service(self: Arc<Self>) -> Server<Self>
-    where
-        <Self::UserService as UserService<Self::Context>>::Error: crate::prelude::Error,
-    {
+    fn build_tower_service(self: Arc<Self>) -> Server<Self> {
         let service = grpc::ServiceImpl { state: self };
         schema::user::user_service_server::UserServiceServer::new(service)
     }
