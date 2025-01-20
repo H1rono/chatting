@@ -1,11 +1,15 @@
+use std::sync::Arc;
+
 use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 
 pub mod error;
+pub mod grpc;
 mod svc;
 
 pub use error::{Error, Result};
 pub use svc::Impl as UserServiceImpl;
+use tower::util::BoxCloneSyncService;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
@@ -112,5 +116,18 @@ pub trait ProvideUserService: Send + Sync + 'static {
         Self: ProvideUserService<Context = Self>,
     {
         self.user_service().delete_user(self, request)
+    }
+    fn build_tower_service(
+        self: Arc<Self>,
+    ) -> BoxCloneSyncService<
+        http::Request<axum::body::Body>,
+        http::Response<axum::body::Body>,
+        std::convert::Infallible,
+    >
+    where
+        Self: ProvideUserService<Context = Self> + Sized,
+    {
+        let service = grpc::user_service(self);
+        BoxCloneSyncService::new(service)
     }
 }

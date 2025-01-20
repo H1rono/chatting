@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use axum::body::Body as AxumBody;
 
-mod grpc;
-
 pub fn make_router<State>(
     state: Arc<State>,
 ) -> tower::util::BoxCloneService<
@@ -17,5 +15,5 @@ where
 {
     use tower::ServiceExt;
 
-    grpc::user_service(state).boxed_clone()
+    state.build_tower_service().boxed_clone()
 }
