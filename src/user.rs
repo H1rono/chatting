@@ -10,8 +10,7 @@ mod svc;
 pub use error::{Error, Result};
 pub use svc::Impl as UserServiceImpl;
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
-pub type Server<S> =
-    crate::grpc::user::user_service_server::UserServiceServer<grpc::ServiceImpl<S>>;
+pub type Server<S> = schema::user::user_service_server::UserServiceServer<grpc::ServiceImpl<S>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -124,6 +123,6 @@ pub trait ProvideUserService: Send + Sync + 'static {
         <Self::UserService as UserService<Self>>::Error: crate::prelude::Error,
     {
         let service = grpc::ServiceImpl { state: self };
-        crate::grpc::user::user_service_server::UserServiceServer::new(service)
+        schema::user::user_service_server::UserServiceServer::new(service)
     }
 }

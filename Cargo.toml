@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["./."]
+members = ["./.", "./schema"]
 
 [workspace.package]
 edition = "2021"
@@ -43,6 +43,8 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 uuid = { version = "1.12.0", features = ["v7", "serde"] }
 
+schema.path = "./schema"
+
 [package]
 name = "chatting"
 edition.workspace = true
@@ -79,6 +81,8 @@ tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid.workspace = true
+
+schema.workspace = true
 
 [build-dependencies]
 tonic-build.workspace = true

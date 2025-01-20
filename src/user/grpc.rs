@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use tonic::Status;
 
-use crate::grpc::user as generated;
 use crate::prelude::Error;
+use schema::user as generated;
 
 pub use generated::user_service_server::SERVICE_NAME;
 
@@ -25,7 +25,7 @@ impl TryFrom<super::User> for generated::User {
             created_at,
             updated_at,
         } = value;
-        let id = crate::grpc::id::UserId { id: id.to_string() };
+        let id = schema::id::UserId { id: id.to_string() };
         let res = generated::User {
             id: Some(id),
             name,
