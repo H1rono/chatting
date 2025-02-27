@@ -29,7 +29,9 @@ async fn main() -> anyhow::Result<()> {
         .await
         .with_context(|| format!("Failed to bind {addr}"))?;
     tracing::info!(%addr, "Listening");
-    axum::serve(listener, router).await?;
+    axum::serve(listener, router)
+        .with_graceful_shutdown(signal())
+        .await?;
     Ok(())
 }
 
@@ -39,6 +41,7 @@ struct State {
     user_service: UserServiceImpl,
 }
 
+#[tracing::instrument]
 async fn load_mysql_from_env(prefix: &str) -> anyhow::Result<MySqlPool> {
     macro_rules! var {
         ($n:ident) => {{
@@ -61,6 +64,15 @@ async fn load_mysql_from_env(prefix: &str) -> anyhow::Result<MySqlPool> {
     sqlx::MySqlPool::connect_with(options)
         .await
         .context("Failed to connect to MySQL")
+        .inspect_err(|e| tracing::error!("{e:?}"))
+}
+
+#[tracing::instrument]
+async fn signal() {
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => tracing::info!("Received ctrl-c"),
+        Err(e) => tracing::error!(%e, "Failed to listen ctrl-c"),
+    }
 }
 
 impl State {
