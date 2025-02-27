@@ -1,9 +1,8 @@
-use std::sync::Arc;
+use std::future::Future;
 
-use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::Timestamp;
+use crate::{error::Failure, prelude::Timestamp};
 
 pub mod error;
 pub mod grpc;
@@ -52,28 +51,26 @@ pub struct DeleteUser {
 }
 
 pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
-    type Error: crate::prelude::Error;
-
     fn get_user<'a>(
         &'a self,
         ctx: &'a Context,
         request: GetUser,
-    ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
+    ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn create_user<'a>(
         &'a self,
         ctx: &'a Context,
         request: CreateUser,
-    ) -> BoxFuture<'a, Result<User, Self::Error>>;
+    ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn update_user<'a>(
         &'a self,
         ctx: &'a Context,
         request: UpdateUser,
-    ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
+    ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn delete_user<'a>(
         &'a self,
         ctx: &'a Context,
         request: DeleteUser,
-    ) -> BoxFuture<'a, Result<Option<User>, Self::Error>>;
+    ) -> impl Future<Output = Result<User, Failure>> + Send;
 }
 
 #[expect(clippy::type_complexity)]
@@ -84,44 +81,44 @@ pub trait ProvideUserService: Send + Sync + 'static {
     fn user_service(&self) -> &Self::UserService;
     fn context(&self) -> &Self::Context;
 
-    fn get_user(
-        &self,
-        request: GetUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
-    {
+    fn get_user(&self, request: GetUser) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
         self.user_service().get_user(ctx, request)
     }
     fn create_user(
         &self,
         request: CreateUser,
-    ) -> BoxFuture<'_, Result<User, <Self::UserService as UserService<Self::Context>>::Error>> {
+    ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
         self.user_service().create_user(ctx, request)
     }
     fn update_user(
         &self,
         request: UpdateUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
-    {
+    ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
         self.user_service().update_user(ctx, request)
     }
     fn delete_user(
         &self,
         request: DeleteUser,
-    ) -> BoxFuture<'_, Result<Option<User>, <Self::UserService as UserService<Self::Context>>::Error>>
-    {
+    ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
         self.user_service().delete_user(ctx, request)
     }
-    // `this` to avoid ambiguous calls,
-    // `Self: Sized` to make dyn-compatible
-    fn build_tower_service(this: Arc<Self>) -> Server<Self>
-    where
-        Self: Sized,
-    {
-        let service = grpc::ServiceImpl { state: this };
-        schema::user::user_service_server::UserServiceServer::new(service)
+}
+
+impl<T> ProvideUserService for std::sync::Arc<T>
+where
+    T: ProvideUserService,
+{
+    type Context = T::Context;
+    type UserService = T::UserService;
+
+    fn context(&self) -> &Self::Context {
+        T::context(self)
+    }
+    fn user_service(&self) -> &Self::UserService {
+        T::user_service(self)
     }
 }
