@@ -4,14 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{error::Failure, prelude::Timestamp};
 
-pub mod error;
-pub mod grpc;
 mod svc;
 
-pub use error::{Error, Result};
 pub use svc::Impl as UserServiceImpl;
-
-pub type Server<S> = schema::user::user_service_server::UserServiceServer<grpc::ServiceImpl<S>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(transparent)]
