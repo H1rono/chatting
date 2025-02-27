@@ -1,10 +1,9 @@
-use futures::future::BoxFuture;
-use futures::FutureExt;
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySqlPool};
 use uuid::Uuid;
 
-use super::Error;
+use crate::error::Failure;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Impl;
@@ -32,18 +31,22 @@ impl From<UserRow> for super::User {
 
 // MARK: helper fns
 
-async fn get_user(pool: &MySqlPool, request: super::GetUser) -> Result<Option<super::User>, Error> {
+async fn get_user(
+    pool: &MySqlPool,
+    request: super::GetUser,
+) -> Result<Option<super::User>, Failure> {
     let super::GetUser {
         id: super::UserId(id),
     } = request;
     let user: Option<UserRow> = sqlx::query_as(r#"SELECT * FROM `users` WHERE `id` = ?"#)
         .bind(id)
         .fetch_optional(pool)
-        .await?;
+        .await
+        .context("Failed to fetch an user from DB")?;
     Ok(user.map(super::User::from))
 }
 
-async fn create_user(pool: &MySqlPool, request: super::CreateUser) -> Result<super::User, Error> {
+async fn create_user(pool: &MySqlPool, request: super::CreateUser) -> Result<super::User, Failure> {
     let id = Uuid::now_v7();
     let super::CreateUser {
         name: super::UserName(name),
@@ -57,18 +60,20 @@ async fn create_user(pool: &MySqlPool, request: super::CreateUser) -> Result<sup
     .bind(id)
     .bind(name)
     .execute(pool)
-    .await?;
+    .await
+    .context("Failed to create an user to DB")?;
     let user: UserRow = sqlx::query_as(r#"SELECT * FROM `users` WHERE `id` = ?"#)
         .bind(id)
         .fetch_one(pool)
-        .await?;
+        .await
+        .context("Failed to fetch an user from DB")?;
     Ok(user.into())
 }
 
 async fn update_user(
     pool: &MySqlPool,
     request: super::UpdateUser,
-) -> Result<Option<super::User>, Error> {
+) -> Result<Option<super::User>, Failure> {
     // TODO: transaction
     let super::UpdateUser {
         id: super::UserId(id),
@@ -84,7 +89,8 @@ async fn update_user(
     .bind(name)
     .bind(id)
     .execute(pool)
-    .await?;
+    .await
+    .context("Failed to update an user in DB")?;
     get_user(
         pool,
         super::GetUser {
@@ -97,7 +103,7 @@ async fn update_user(
 async fn delete_user(
     pool: &MySqlPool,
     request: super::DeleteUser,
-) -> Result<Option<super::User>, Error> {
+) -> Result<Option<super::User>, Failure> {
     // TODO: transaction
     let super::DeleteUser {
         id: super::UserId(id),
@@ -111,7 +117,8 @@ async fn delete_user(
     sqlx::query(r#"DELETE FROM `users` WHERE `id` = ?"#)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .context("Failed to delete an user from DB")?;
     Ok(Some(user))
 }
 
@@ -119,39 +126,43 @@ async fn delete_user(
 
 impl<Ctx> super::UserService<Ctx> for Impl
 where
-    Ctx: AsRef<MySqlPool>,
+    Ctx: AsRef<MySqlPool> + Send + Sync,
 {
-    type Error = Error;
-
-    fn get_user<'a>(
+    async fn get_user<'a>(
         &'a self,
         ctx: &'a Ctx,
         request: super::GetUser,
-    ) -> BoxFuture<'a, Result<Option<super::User>, Self::Error>> {
-        get_user(ctx.as_ref(), request).boxed()
+    ) -> Result<super::User, Failure> {
+        get_user(ctx.as_ref(), request)
+            .await?
+            .ok_or_else(|| Failure::reject_not_found("User not found"))
     }
 
-    fn create_user<'a>(
+    async fn create_user<'a>(
         &'a self,
         ctx: &'a Ctx,
         request: super::CreateUser,
-    ) -> BoxFuture<'a, Result<super::User, Self::Error>> {
-        create_user(ctx.as_ref(), request).boxed()
+    ) -> Result<super::User, Failure> {
+        create_user(ctx.as_ref(), request).await
     }
 
-    fn update_user<'a>(
+    async fn update_user<'a>(
         &'a self,
         ctx: &'a Ctx,
         request: super::UpdateUser,
-    ) -> BoxFuture<'a, Result<Option<super::User>, Self::Error>> {
-        update_user(ctx.as_ref(), request).boxed()
+    ) -> Result<super::User, Failure> {
+        update_user(ctx.as_ref(), request)
+            .await?
+            .ok_or_else(|| Failure::reject_not_found("User not found"))
     }
 
-    fn delete_user<'a>(
+    async fn delete_user<'a>(
         &'a self,
         ctx: &'a Ctx,
         request: super::DeleteUser,
-    ) -> BoxFuture<'a, Result<Option<super::User>, Self::Error>> {
-        delete_user(ctx.as_ref(), request).boxed()
+    ) -> Result<super::User, Failure> {
+        delete_user(ctx.as_ref(), request)
+            .await?
+            .ok_or_else(|| Failure::reject_not_found("User not found"))
     }
 }
