@@ -20,7 +20,6 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(State { pool, user_service });
     state.migrate().await?;
     let router = chatting::router::make_router(state);
-    let make_service = axum::ServiceExt::into_make_service(router);
     let port: u16 = std::env::var("PORT")
         .unwrap_or_else(|_| 8080.to_string())
         .parse()
@@ -30,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
         .await
         .with_context(|| format!("Failed to bind {addr}"))?;
     tracing::info!(%addr, "Listening");
-    axum::serve(listener, make_service).await?;
+    axum::serve(listener, router).await?;
     Ok(())
 }
 
