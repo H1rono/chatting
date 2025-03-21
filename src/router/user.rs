@@ -1,7 +1,7 @@
 use schema::user as generated;
 
-pub use generated::user_service_server::UserServiceServer as Server;
 pub use generated::user_service_server::SERVICE_NAME;
+pub use generated::user_service_server::UserServiceServer as Server;
 
 use super::ErrorStatus;
 use crate::{error::Failure, user as entity};
