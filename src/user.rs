@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{error::Failure, prelude::Timestamp};
@@ -25,23 +23,23 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub struct GetUser {
+pub struct GetUserParams {
     pub id: UserId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub struct CreateUser {
+pub struct CreateUserParams {
     pub name: UserName,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub struct UpdateUser {
+pub struct UpdateUserParams {
     pub id: UserId,
     pub name: UserName,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub struct DeleteUser {
+pub struct DeleteUserParams {
     pub id: UserId,
 }
 
@@ -49,22 +47,22 @@ pub trait UserService<Context: ?Sized>: Send + Sync + 'static {
     fn get_user<'a>(
         &'a self,
         ctx: &'a Context,
-        request: GetUser,
+        params: GetUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn create_user<'a>(
         &'a self,
         ctx: &'a Context,
-        request: CreateUser,
+        params: CreateUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn update_user<'a>(
         &'a self,
         ctx: &'a Context,
-        request: UpdateUser,
+        params: UpdateUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send;
     fn delete_user<'a>(
         &'a self,
         ctx: &'a Context,
-        request: DeleteUser,
+        params: DeleteUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send;
 }
 
@@ -75,30 +73,33 @@ pub trait ProvideUserService: Send + Sync + 'static {
     fn user_service(&self) -> &Self::UserService;
     fn context(&self) -> &Self::Context;
 
-    fn get_user(&self, request: GetUser) -> impl Future<Output = Result<User, Failure>> + Send {
+    fn get_user(
+        &self,
+        params: GetUserParams,
+    ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
-        self.user_service().get_user(ctx, request)
+        self.user_service().get_user(ctx, params)
     }
     fn create_user(
         &self,
-        request: CreateUser,
+        params: CreateUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
-        self.user_service().create_user(ctx, request)
+        self.user_service().create_user(ctx, params)
     }
     fn update_user(
         &self,
-        request: UpdateUser,
+        params: UpdateUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
-        self.user_service().update_user(ctx, request)
+        self.user_service().update_user(ctx, params)
     }
     fn delete_user(
         &self,
-        request: DeleteUser,
+        params: DeleteUserParams,
     ) -> impl Future<Output = Result<User, Failure>> + Send {
         let ctx = self.context();
-        self.user_service().delete_user(ctx, request)
+        self.user_service().delete_user(ctx, params)
     }
 }
 

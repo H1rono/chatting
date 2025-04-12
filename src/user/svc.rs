@@ -33,9 +33,9 @@ impl From<UserRow> for super::User {
 
 async fn get_user(
     pool: &MySqlPool,
-    request: super::GetUser,
+    request: super::GetUserParams,
 ) -> Result<Option<super::User>, Failure> {
-    let super::GetUser {
+    let super::GetUserParams {
         id: super::UserId(id),
     } = request;
     let user: Option<UserRow> = sqlx::query_as(r#"SELECT * FROM `users` WHERE `id` = ?"#)
@@ -46,9 +46,12 @@ async fn get_user(
     Ok(user.map(super::User::from))
 }
 
-async fn create_user(pool: &MySqlPool, request: super::CreateUser) -> Result<super::User, Failure> {
+async fn create_user(
+    pool: &MySqlPool,
+    request: super::CreateUserParams,
+) -> Result<super::User, Failure> {
     let id = Uuid::now_v7();
-    let super::CreateUser {
+    let super::CreateUserParams {
         name: super::UserName(name),
     } = request;
     sqlx::query(
@@ -72,10 +75,10 @@ async fn create_user(pool: &MySqlPool, request: super::CreateUser) -> Result<sup
 
 async fn update_user(
     pool: &MySqlPool,
-    request: super::UpdateUser,
+    request: super::UpdateUserParams,
 ) -> Result<Option<super::User>, Failure> {
     // TODO: transaction
-    let super::UpdateUser {
+    let super::UpdateUserParams {
         id: super::UserId(id),
         name: super::UserName(name),
     } = request;
@@ -93,7 +96,7 @@ async fn update_user(
     .context("Failed to update an user in DB")?;
     get_user(
         pool,
-        super::GetUser {
+        super::GetUserParams {
             id: super::UserId(id),
         },
     )
@@ -102,13 +105,13 @@ async fn update_user(
 
 async fn delete_user(
     pool: &MySqlPool,
-    request: super::DeleteUser,
+    request: super::DeleteUserParams,
 ) -> Result<Option<super::User>, Failure> {
     // TODO: transaction
-    let super::DeleteUser {
+    let super::DeleteUserParams {
         id: super::UserId(id),
     } = request;
-    let get_request = super::GetUser {
+    let get_request = super::GetUserParams {
         id: super::UserId(id),
     };
     let Some(user) = get_user(pool, get_request).await? else {
@@ -131,7 +134,7 @@ where
     async fn get_user<'a>(
         &'a self,
         ctx: &'a Ctx,
-        request: super::GetUser,
+        request: super::GetUserParams,
     ) -> Result<super::User, Failure> {
         get_user(ctx.as_ref(), request)
             .await?
@@ -141,7 +144,7 @@ where
     async fn create_user<'a>(
         &'a self,
         ctx: &'a Ctx,
-        request: super::CreateUser,
+        request: super::CreateUserParams,
     ) -> Result<super::User, Failure> {
         create_user(ctx.as_ref(), request).await
     }
@@ -149,7 +152,7 @@ where
     async fn update_user<'a>(
         &'a self,
         ctx: &'a Ctx,
-        request: super::UpdateUser,
+        request: super::UpdateUserParams,
     ) -> Result<super::User, Failure> {
         update_user(ctx.as_ref(), request)
             .await?
@@ -159,7 +162,7 @@ where
     async fn delete_user<'a>(
         &'a self,
         ctx: &'a Ctx,
-        request: super::DeleteUser,
+        request: super::DeleteUserParams,
     ) -> Result<super::User, Failure> {
         delete_user(ctx.as_ref(), request)
             .await?

@@ -62,7 +62,7 @@ where
             .map_err(ErrorStatus)?;
         let user = self
             .0
-            .get_user(entity::GetUser {
+            .get_user(entity::GetUserParams {
                 id: entity::UserId(id),
             })
             .await
@@ -80,7 +80,7 @@ where
         let generated::CreateUserRequest { name } = req;
         let user = self
             .0
-            .create_user(entity::CreateUser {
+            .create_user(entity::CreateUserParams {
                 name: entity::UserName(name),
             })
             .await
@@ -105,7 +105,7 @@ where
             .map_err(ErrorStatus)?;
         let user = self
             .0
-            .update_user(entity::UpdateUser {
+            .update_user(entity::UpdateUserParams {
                 id: entity::UserId(id),
                 name: entity::UserName(name),
             })
@@ -131,7 +131,7 @@ where
             .map_err(ErrorStatus)?;
         let user = self
             .0
-            .delete_user(entity::DeleteUser {
+            .delete_user(entity::DeleteUserParams {
                 id: entity::UserId(id),
             })
             .await
