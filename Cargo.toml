@@ -33,7 +33,7 @@ tonic.default-features = false
 tonic.features = ["codegen", "channel"]
 tonic-build = "0.14.2"
 tonic-prost = "0.14.5"
-tonic-prost-build = "0.14.2"
+tonic-prost-build = "0.14.5"
 tonic-types = "0.14.2"
 tonic-web = "0.14.5"
 tokio = { version = "1.46.1", features = ["full"] }
