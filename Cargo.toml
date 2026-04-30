@@ -8,7 +8,7 @@ version = "0.1.0"
 publish = false
 
 [workspace.dependencies]
-anyhow = { version = "1.0.97", features = ["backtrace"] }
+anyhow = { version = "1.0.102", features = ["backtrace"] }
 async-stream = "0.3.6"
 async-trait = "0.1.89"
 axum.version = "0.8.3"
