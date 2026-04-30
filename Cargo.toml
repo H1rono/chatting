@@ -24,7 +24,7 @@ hyper-util = { version = "0.1.20", features = ["tokio", "server-auto", "server-g
 prost = "0.14.1"
 prost-types = "0.14.1"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
+serde_json = "1.0.149"
 sqlx.version = "0.8.3"
 sqlx.features = ["mysql", "runtime-tokio", "tls-rustls", "chrono", "uuid"]
 thiserror = "2.0.18"
